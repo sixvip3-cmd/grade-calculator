@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Средний балл</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #f5f6fa;
+  --white: #ffffff;
+  --border: #e2e5ef;
+  --text: #1a1d2e;
+  --muted: #8b90a7;
+  --grade2: #ef4444;
+  --grade3: #f97316;
+  --grade4: #3b82f6;
+  --grade5: #22c55e;
+  --shadow: 0 2px 12px rgba(26,29,46,0.08);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 48px 16px 64px;
+}
+
+h1 {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 6px;
+  text-align: center;
+}
+
+.tagline {
+  font-size: 14px;
+  color: var(--muted);
+  margin-bottom: 36px;
+  text-align: center;
+}
+
+.card {
+  background: var(--white);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  padding: 28px;
+  width: 100%;
+  max-width: 520px;
+  margin-bottom: 16px;
+}
+
+.section-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+
+/* ---- weight selector ---- */
+.weight-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  background: var(--bg);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+
+.weight-row label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  flex-shrink: 0;
+}
+
+.weight-stepper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.w-btn {
+  width: 28px; height: 28px;
+  border-radius: 8px;
+  border: 1.5px solid var(--border);
+  background: var(--white);
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  color: var(--text);
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.12s, border-color 0.12s;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.w-btn:hover { background: var(--bg); border-color: #3b82f6; color: #3b82f6; }
+
+#weight-input {
+  width: 56px;
+  text-align: center;
+  font-family: inherit;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  background: var(--white);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  padding: 2px 6px;
+  outline: none;
+  transition: border-color 0.15s;
+  -moz-appearance: textfield;
+}
+#weight-input::-webkit-outer-spin-button,
+#weight-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+#weight-input:focus { border-color: #3b82f6; }
+
+.weight-hint {
+  font-size: 12px;
+  color: var(--muted);
+  margin-left: 4px;
+}
+
+/* ---- grade buttons ---- */
+.grade-buttons {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.grade-btn {
+  aspect-ratio: 1;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  background: var(--white);
+  font-family: inherit;
+  font-size: 26px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.1s, border-color 0.15s, background 0.15s, color 0.15s;
+  color: var(--muted);
+  position: relative;
+  overflow: hidden;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 2px;
+}
+
+.grade-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+.grade-btn:active { transform: scale(0.94); }
+
+.grade-btn[data-grade="2"] { --gc: var(--grade2); }
+.grade-btn[data-grade="3"] { --gc: var(--grade3); }
+.grade-btn[data-grade="4"] { --gc: var(--grade4); }
+.grade-btn[data-grade="5"] { --gc: var(--grade5); }
+
+.grade-btn:hover, .grade-btn.pressed { border-color: var(--gc); color: var(--gc); }
+.grade-btn.pressed { background: color-mix(in srgb, var(--gc) 10%, white); }
+
+.btn-weight-badge {
+  font-size: 10px;
+  font-weight: 600;
+  opacity: 0.55;
+  line-height: 1;
+}
+
+.ripple {
+  position: absolute;
+  border-radius: 50%;
+  transform: scale(0);
+  animation: rippleAnim 0.4s linear;
+  background: color-mix(in srgb, var(--gc) 30%, transparent);
+  pointer-events: none;
+}
+@keyframes rippleAnim { to { transform: scale(4); opacity: 0; } }
+
+/* ---- tags ---- */
+#tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-height: 36px;
+  margin-bottom: 8px;
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px 5px 11px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+  user-select: none;
+  line-height: 1;
+}
+.tag:hover { opacity: 0.72; transform: scale(0.95); }
+
+.tag[data-grade="2"] { background: #fef2f2; color: var(--grade2); }
+.tag[data-grade="3"] { background: #fff7ed; color: var(--grade3); }
+.tag[data-grade="4"] { background: #eff6ff; color: var(--grade4); }
+.tag[data-grade="5"] { background: #f0fdf4; color: var(--grade5); }
+
+.tag-w {
+  font-size: 10px;
+  font-weight: 600;
+  opacity: 0.6;
+  background: rgba(0,0,0,0.07);
+  border-radius: 6px;
+  padding: 1px 4px;
+}
+.tag-x { font-size: 11px; opacity: 0.5; margin-left: 2px; }
+
+.empty-hint { font-size: 13px; color: var(--border); align-self: center; }
+
+.count-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+}
+#count-label { font-size: 13px; color: var(--muted); }
+
+#clear-btn {
+  font-size: 12px; font-weight: 600; color: var(--muted);
+  background: none; border: none; cursor: pointer;
+  padding: 4px 8px; border-radius: 6px;
+  transition: background 0.15s, color 0.15s;
+}
+#clear-btn:hover { background: #fee2e2; color: var(--grade2); }
+
+/* ---- manual input ---- */
+.manual-row {
+  display: flex; gap: 8px;
+  margin-top: 20px; padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+#manual-input {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  font-family: inherit; font-size: 14px;
+  outline: none; transition: border-color 0.15s;
+  color: var(--text); background: var(--bg);
+}
+#manual-input:focus { border-color: #3b82f6; background: white; }
+#manual-input::placeholder { color: var(--muted); }
+
+#manual-btn {
+  padding: 10px 16px;
+  background: var(--text); color: white;
+  border: none; border-radius: 10px;
+  font-family: inherit; font-size: 14px; font-weight: 600;
+  cursor: pointer; transition: opacity 0.15s; white-space: nowrap;
+}
+#manual-btn:hover { opacity: 0.82; }
+
+.manual-hint {
+  font-size: 11px; color: var(--muted);
+  margin-top: 8px; line-height: 1.4;
+}
+
+/* ---- result ---- */
+.result-card {
+  background: var(--white);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  padding: 28px;
+  width: 100%; max-width: 520px;
+  text-align: center;
+  transition: opacity 0.3s;
+}
+.result-card.hidden { opacity: 0.3; }
+
+#avg-display {
+  font-size: 72px; font-weight: 700;
+  letter-spacing: -0.04em; line-height: 1;
+  margin-bottom: 4px;
+  transition: color 0.3s;
+}
+#avg-label { font-size: 14px; color: var(--muted); margin-bottom: 20px; }
+
+.bar-track {
+  height: 8px; background: var(--border);
+  border-radius: 8px; overflow: hidden; margin-bottom: 20px;
+}
+#bar-fill {
+  height: 100%; border-radius: 8px;
+  transition: width 0.4s ease, background 0.4s;
+  width: 0%;
+}
+
+/* comparison row */
+.compare-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.compare-box {
+  flex: 1;
+  background: var(--bg);
+  border-radius: 12px;
+  padding: 12px 10px;
+  text-align: center;
+}
+
+.compare-val {
+  font-size: 22px; font-weight: 700; line-height: 1;
+  margin-bottom: 4px;
+  transition: color 0.3s;
+}
+.compare-lbl { font-size: 11px; color: var(--muted); font-weight: 500; }
+
+/* dist grid */
+.dist-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+.dist-item {
+  border-radius: 10px; padding: 10px 6px 8px; text-align: center;
+}
+.dist-item[data-grade="2"] { background: #fef2f2; }
+.dist-item[data-grade="3"] { background: #fff7ed; }
+.dist-item[data-grade="4"] { background: #eff6ff; }
+.dist-item[data-grade="5"] { background: #f0fdf4; }
+
+.dist-num {
+  font-size: 18px; font-weight: 700; line-height: 1; margin-bottom: 3px;
+}
+.dist-item[data-grade="2"] .dist-num { color: var(--grade2); }
+.dist-item[data-grade="3"] .dist-num { color: var(--grade3); }
+.dist-item[data-grade="4"] .dist-num { color: var(--grade4); }
+.dist-item[data-grade="5"] .dist-num { color: var(--grade5); }
+
+.dist-lbl { font-size: 10px; color: var(--muted); font-weight: 500; }
+.dist-w   { font-size: 10px; color: var(--muted); margin-top: 2px; }
+
+@media (max-width: 420px) {
+  #avg-display { font-size: 56px; }
+  .grade-buttons { gap: 8px; }
+  .compare-val  { font-size: 18px; }
+}
+</style>
+</head>
+<body>
+
+<h1>Средний балл</h1>
+<p class="tagline">Оценки от 2 до 5 с учётом веса</p>
+
+<div class="card">
+  <!-- weight selector -->
+  <div class="section-label">Вес следующей оценки</div>
+  <div class="weight-row">
+    <label>Коэффициент</label>
+    <div class="weight-stepper">
+      <button class="w-btn" id="w-minus">−</button>
+      <input id="weight-input" type="number" min="1" max="100" value="1">
+      <button class="w-btn" id="w-plus">+</button>
+    </div>
+    <span class="weight-hint">от 1 до 100</span>
+  </div>
+
+  <!-- grade buttons -->
+  <div class="section-label">Добавить оценку</div>
+  <div class="grade-buttons">
+    <button class="grade-btn" data-grade="2"><span>2</span><span class="btn-weight-badge" id="badge-2">×1</span></button>
+    <button class="grade-btn" data-grade="3"><span>3</span><span class="btn-weight-badge" id="badge-3">×1</span></button>
+    <button class="grade-btn" data-grade="4"><span>4</span><span class="btn-weight-badge" id="badge-4">×1</span></button>
+    <button class="grade-btn" data-grade="5"><span>5</span><span class="btn-weight-badge" id="badge-5">×1</span></button>
+  </div>
+
+  <!-- tags -->
+  <div class="section-label">Введённые оценки</div>
+  <div id="tags"><span class="empty-hint">нет оценок</span></div>
+
+  <div class="count-row">
+    <span id="count-label">0 оценок</span>
+    <button id="clear-btn">Очистить всё</button>
+  </div>
+
+  <!-- manual input -->
+  <div class="manual-row">
+    <input id="manual-input" type="text" placeholder="4 5 3  или  4×2 5×3 3×1" autocomplete="off">
+    <button id="manual-btn">Добавить</button>
+  </div>
+  <p class="manual-hint">Формат: просто цифры (вес = текущий) или &laquo;оценка×вес&raquo;, например <b>4×2 5×1 3×3</b></p>
+</div>
+
+<div class="result-card hidden" id="result-card">
+  <div id="avg-display">—</div>
+  <div id="avg-label">средний балл</div>
+  <div class="bar-track"><div id="bar-fill"></div></div>
+
+  <div class="compare-row">
+    <div class="compare-box">
+      <div class="compare-val" id="avg-weighted">—</div>
+      <div class="compare-lbl">взвешенный средний</div>
+    </div>
+    <div class="compare-box">
+      <div class="compare-val" id="avg-simple">—</div>
+      <div class="compare-lbl">простой средний</div>
+    </div>
+    <div class="compare-box">
+      <div class="compare-val" id="total-weight">0</div>
+      <div class="compare-lbl">сумма весов</div>
+    </div>
+  </div>
+
+  <div class="dist-grid">
+    <div class="dist-item" data-grade="2">
+      <div class="dist-num" id="d2">0</div>
+      <div class="dist-lbl">двоек</div>
+      <div class="dist-w" id="dw2">вес 0</div>
+    </div>
+    <div class="dist-item" data-grade="3">
+      <div class="dist-num" id="d3">0</div>
+      <div class="dist-lbl">троек</div>
+      <div class="dist-w" id="dw3">вес 0</div>
+    </div>
+    <div class="dist-item" data-grade="4">
+      <div class="dist-num" id="d4">0</div>
+      <div class="dist-lbl">четвёрок</div>
+      <div class="dist-w" id="dw4">вес 0</div>
+    </div>
+    <div class="dist-item" data-grade="5">
+      <div class="dist-num" id="d5">0</div>
+      <div class="dist-lbl">пятёрок</div>
+      <div class="dist-w" id="dw5">вес 0</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// each entry: { grade, weight }
+let entries = [];
+let currentWeight = 1;
+
+const colors = { 2: '#ef4444', 3: '#f97316', 4: '#3b82f6', 5: '#22c55e' };
+
+// --- weight stepper ---
+const weightInput = document.getElementById('weight-input');
+
+function clampWeight(v) { return Math.min(100, Math.max(1, Math.round(v) || 1)); }
+
+document.getElementById('w-minus').addEventListener('click', () => {
+  currentWeight = clampWeight(currentWeight - 1);
+  updateWeightUI();
+});
+document.getElementById('w-plus').addEventListener('click', () => {
+  currentWeight = clampWeight(currentWeight + 1);
+  updateWeightUI();
+});
+
+weightInput.addEventListener('input', () => {
+  const v = parseInt(weightInput.value);
+  if (!isNaN(v)) { currentWeight = clampWeight(v); updateBadges(); }
+});
+weightInput.addEventListener('blur', () => {
+  currentWeight = clampWeight(parseInt(weightInput.value));
+  updateWeightUI();
+});
+weightInput.addEventListener('keydown', e => {
+  if (e.key === 'ArrowUp')   { e.preventDefault(); currentWeight = clampWeight(currentWeight + 1); updateWeightUI(); }
+  if (e.key === 'ArrowDown') { e.preventDefault(); currentWeight = clampWeight(currentWeight - 1); updateWeightUI(); }
+});
+
+function updateBadges() {
+  [2,3,4,5].forEach(g => {
+    document.getElementById('badge-' + g).textContent = '×' + currentWeight;
+  });
+}
+
+function updateWeightUI() {
+  weightInput.value = currentWeight;
+  updateBadges();
+}
+
+// --- add / remove ---
+function addEntry(grade, weight) {
+  entries.push({ grade, weight });
+  render();
+  animateBtn(grade);
+}
+
+function removeEntry(idx) {
+  entries.splice(idx, 1);
+  render();
+}
+
+function clearAll() {
+  entries = [];
+  render();
+}
+
+// --- render tags ---
+function render() {
+  renderTags();
+  renderResult();
+}
+
+function renderTags() {
+  const tagsEl = document.getElementById('tags');
+  const countLabel = document.getElementById('count-label');
+
+  if (entries.length === 0) {
+    tagsEl.innerHTML = '<span class="empty-hint">нет оценок</span>';
+    countLabel.textContent = '0 оценок';
+    return;
+  }
+
+  tagsEl.innerHTML = '';
+  entries.forEach((e, i) => {
+    const tag = document.createElement('div');
+    tag.className = 'tag';
+    tag.dataset.grade = e.grade;
+    tag.title = 'Удалить';
+    tag.innerHTML =
+      `<span>${e.grade}</span>` +
+      (e.weight !== 1 ? `<span class="tag-w">×${e.weight}</span>` : '') +
+      `<span class="tag-x">✕</span>`;
+    tag.addEventListener('click', () => removeEntry(i));
+    tagsEl.appendChild(tag);
+  });
+
+  const n = entries.length;
+  countLabel.textContent = n + ' ' + plural(n, 'оценка', 'оценки', 'оценок');
+}
+
+// --- render result ---
+function renderResult() {
+  const resultCard = document.getElementById('result-card');
+  const avgDisplay = document.getElementById('avg-display');
+  const avgLabel   = document.getElementById('avg-label');
+  const barFill    = document.getElementById('bar-fill');
+
+  const dist  = {2:{count:0,wsum:0}, 3:{count:0,wsum:0}, 4:{count:0,wsum:0}, 5:{count:0,wsum:0}};
+  let wsum = 0, wgsum = 0, gsum = 0;
+
+  entries.forEach(e => {
+    dist[e.grade].count++;
+    dist[e.grade].wsum += e.weight;
+    wsum  += e.weight;
+    wgsum += e.grade * e.weight;
+    gsum  += e.grade;
+  });
+
+  [2,3,4,5].forEach(g => {
+    document.getElementById('d' + g).textContent  = dist[g].count;
+    document.getElementById('dw' + g).textContent = 'вес ' + dist[g].wsum;
+  });
+
+  if (entries.length === 0) {
+    resultCard.classList.add('hidden');
+    avgDisplay.textContent = '—';
+    barFill.style.width = '0%';
+    document.getElementById('avg-weighted').textContent = '—';
+    document.getElementById('avg-simple').textContent   = '—';
+    document.getElementById('total-weight').textContent = '0';
+    return;
+  }
+
+  resultCard.classList.remove('hidden');
+
+  const avgW = wgsum / wsum;
+  const avgS = gsum  / entries.length;
+
+  avgDisplay.textContent = avgW.toFixed(2);
+  document.getElementById('avg-weighted').textContent = avgW.toFixed(2);
+  document.getElementById('avg-simple').textContent   = avgS.toFixed(2);
+  document.getElementById('total-weight').textContent = wsum;
+
+  const col = avgW < 2.5 ? colors[2] : avgW < 3.5 ? colors[3] : avgW < 4.5 ? colors[4] : colors[5];
+  avgDisplay.style.color = col;
+  barFill.style.background = col;
+  document.getElementById('avg-weighted').style.color = col;
+
+  const simCol = avgS < 2.5 ? colors[2] : avgS < 3.5 ? colors[3] : avgS < 4.5 ? colors[4] : colors[5];
+  document.getElementById('avg-simple').style.color = simCol;
+
+  barFill.style.width = (((avgW - 2) / 3) * 100).toFixed(1) + '%';
+
+  const lbl = avgW >= 4.5 ? 'Отлично' : avgW >= 3.5 ? 'Хорошо' : avgW >= 2.5 ? 'Удовлетворительно' : 'Неудовлетворительно';
+  avgLabel.textContent = lbl + ' · ' + entries.length + ' ' + plural(entries.length, 'оценка', 'оценки', 'оценок');
+}
+
+// --- button clicks ---
+document.querySelectorAll('.grade-btn').forEach(btn => {
+  btn.addEventListener('click', e => {
+    const g = parseInt(btn.dataset.grade);
+    const r = document.createElement('span');
+    r.className = 'ripple';
+    const rect = btn.getBoundingClientRect();
+    const size = Math.max(rect.width, rect.height);
+    r.style.width = r.style.height = size + 'px';
+    r.style.left = (e.clientX - rect.left - size/2) + 'px';
+    r.style.top  = (e.clientY - rect.top  - size/2) + 'px';
+    btn.appendChild(r);
+    r.addEventListener('animationend', () => r.remove());
+    addEntry(g, currentWeight);
+  });
+});
+
+function animateBtn(g) {
+  const btn = document.querySelector(`.grade-btn[data-grade="${g}"]`);
+  btn.classList.add('pressed');
+  setTimeout(() => btn.classList.remove('pressed'), 300);
+}
+
+document.getElementById('clear-btn').addEventListener('click', clearAll);
+
+// --- manual input ---
+// supports: "4 5 3" (use currentWeight) or "4x2 5x3 3x1" / "4×2 5×3"
+function parseManual(str) {
+  const result = [];
+  const tokens = str.trim().split(/[\s,;]+/);
+  tokens.forEach(tok => {
+    const m = tok.match(/^([2-5])[x×*](\d+)$/i);
+    if (m) {
+      const g = parseInt(m[1]);
+      const w = Math.min(100, Math.max(1, parseInt(m[2])));
+      result.push({ grade: g, weight: w });
+    } else {
+      const g = parseInt(tok);
+      if (g >= 2 && g <= 5) result.push({ grade: g, weight: currentWeight });
+    }
+  });
+  return result;
+}
+
+document.getElementById('manual-btn').addEventListener('click', () => {
+  const inp = document.getElementById('manual-input');
+  const parsed = parseManual(inp.value);
+  if (parsed.length) {
+    parsed.forEach(e => entries.push(e));
+    inp.value = '';
+    render();
+  }
+  inp.focus();
+});
+
+document.getElementById('manual-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('manual-btn').click();
+});
+
+// --- helpers ---
+function plural(n, one, few, many) {
+  const m = Math.abs(n) % 100, m10 = m % 10;
+  if (m > 10 && m < 20) return many;
+  if (m10 === 1) return one;
+  if (m10 >= 2 && m10 <= 4) return few;
+  return many;
+}
+</script>
+</body>
+</html>
